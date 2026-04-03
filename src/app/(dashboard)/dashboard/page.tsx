@@ -68,6 +68,7 @@ export default function DashboardPage() {
   const [activePreset, setActivePreset] = useState<DatePreset>("all");
   const [calendarRange, setCalendarRange] = useState<DateRange | undefined>();
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const filters = useMemo(() => {
     if (activePreset === "custom" && calendarRange?.from && calendarRange?.to) {
@@ -84,8 +85,11 @@ export default function DashboardPage() {
 
   function handlePresetClick(preset: DatePreset) {
     setActivePreset(preset);
-    if (preset !== "custom") {
+    if (preset === "custom") {
+      setSheetOpen(true);
+    } else {
       setCalendarRange(undefined);
+      setSheetOpen(false);
     }
   }
 
@@ -128,38 +132,36 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Date range presets + custom calendar */}
-      <div className="overflow-x-auto">
-        <div className="inline-flex items-center gap-1 rounded-lg border bg-muted/50 p-1">
-          {presets.map((preset) => (
-            <Button
-              key={preset.value}
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePresetClick(preset.value)}
-              className={cn(
-                "h-8 shrink-0 text-xs font-medium",
-                activePreset === preset.value &&
-                  "bg-background text-foreground shadow-sm"
-              )}
-            >
-              {preset.label}
-            </Button>
-          ))}
+      {/* Date range filter */}
+      <div className="flex items-center gap-2">
+        <Select
+          value={activePreset}
+          onValueChange={(val) => handlePresetClick(val as DatePreset)}
+        >
+          <SelectTrigger className="w-48">
+            <CalendarDays className="mr-2 h-4 w-4 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {presets.map((preset) => (
+              <SelectItem key={preset.value} value={preset.value}>
+                {preset.label}
+              </SelectItem>
+            ))}
+            <SelectItem value="custom">
+              {activePreset === "custom" && calendarRange?.from
+                ? calendarLabel
+                : "Custom range"}
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
-          <Sheet>
+        {activePreset === "custom" && (
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-8 shrink-0 gap-1.5 text-xs font-medium",
-                  activePreset === "custom" &&
-                    "bg-background text-foreground shadow-sm"
-                )}
-              >
+              <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
                 <CalendarDays className="h-3.5 w-3.5" />
-                {calendarLabel}
+                {calendarRange?.from ? calendarLabel : "Pick dates"}
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-xl">
@@ -167,7 +169,6 @@ export default function DashboardPage() {
                 <SheetTitle>Select date range</SheetTitle>
               </SheetHeader>
               <div className="space-y-3 py-4">
-                {/* Month & Year selects */}
                 <div className="flex items-center justify-center gap-2">
                   <Select
                     value={String(calendarMonth.getMonth())}
@@ -233,6 +234,7 @@ export default function DashboardPage() {
                     onClick={() => {
                       setCalendarRange(undefined);
                       setActivePreset("all");
+                      setSheetOpen(false);
                     }}
                   >
                     Clear selection
@@ -241,7 +243,7 @@ export default function DashboardPage() {
               )}
             </SheetContent>
           </Sheet>
-        </div>
+        )}
       </div>
 
       <StatsCards stats={stats} />
