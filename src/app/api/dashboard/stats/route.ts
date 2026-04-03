@@ -14,7 +14,7 @@ export async function GET() {
   const [
     totalDoctors,
     totalPatients,
-    patientsPerDoctor,
+    topDoctorsByPatients,
     monthlyTrends,
     conditionDistribution,
   ] = await Promise.all([
@@ -94,7 +94,7 @@ export async function GET() {
     totalPatients,
     avgPatientsPerDoctor:
       totalDoctors > 0 ? Math.round(totalPatients / totalDoctors) : 0,
-    patientsPerDoctor,
+    topDoctorsByPatients,
     monthlyTrends,
     conditionDistribution,
   });
