@@ -10,11 +10,16 @@ export interface DashboardStats {
   conditionDistribution: { condition: string; count: number }[];
 }
 
-export function useDashboardStats() {
+interface DashboardFilters {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export function useDashboardStats(filters: DashboardFilters = {}) {
   return useQuery<DashboardStats>({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", filters],
     queryFn: async () => {
-      const { data } = await api.get("/dashboard/stats");
+      const { data } = await api.get("/dashboard/stats", { params: filters });
       return data;
     },
   });
