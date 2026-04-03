@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { TopDoctorsChart } from "@/components/dashboard/top-doctors-chart";
@@ -15,6 +15,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -64,7 +69,104 @@ function getPresetDateRange(preset: DatePreset) {
   };
 }
 
+function DatePickerContent({
+  calendarMonth,
+  setCalendarMonth,
+  calendarRange,
+  onSelect,
+  onClear,
+}: {
+  calendarMonth: Date;
+  setCalendarMonth: (fn: (prev: Date) => Date) => void;
+  calendarRange: DateRange | undefined;
+  onSelect: (range: DateRange | undefined) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="space-y-3 py-4">
+      <div className="flex items-center justify-center gap-2">
+        <Select
+          value={String(calendarMonth.getMonth())}
+          onValueChange={(val) =>
+            setCalendarMonth((prev) => setMonth(prev, Number(val)))
+          }
+        >
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" className="max-h-48">
+            {Array.from({ length: 12 }, (_, i) => (
+              <SelectItem key={i} value={String(i)}>
+                {format(new Date(2024, i), "MMMM")}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={String(calendarMonth.getFullYear())}
+          onValueChange={(val) =>
+            setCalendarMonth((prev) => setYear(prev, Number(val)))
+          }
+        >
+          <SelectTrigger className="w-24">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent position="popper" className="max-h-48">
+            {Array.from(
+              { length: new Date().getFullYear() - 2000 + 1 },
+              (_, i) => {
+                const year = 2000 + i;
+                return (
+                  <SelectItem key={year} value={String(year)}>
+                    {year}
+                  </SelectItem>
+                );
+              }
+            )}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex justify-center">
+        <Calendar
+          mode="range"
+          selected={calendarRange}
+          onSelect={onSelect}
+          month={calendarMonth}
+          onMonthChange={(m) => setCalendarMonth(() => m)}
+          numberOfMonths={1}
+          disabled={{ after: new Date() }}
+        />
+      </div>
+
+      {calendarRange?.from && (
+        <div className="border-t px-4 py-3">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full text-xs"
+            onClick={onClear}
+          >
+            Clear selection
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    setIsDesktop(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const [activePreset, setActivePreset] = useState<DatePreset>("all");
   const [calendarRange, setCalendarRange] = useState<DateRange | undefined>();
   const [calendarMonth, setCalendarMonth] = useState(new Date());
@@ -156,7 +258,31 @@ export default function DashboardPage() {
           </SelectContent>
         </Select>
 
-        {activePreset === "custom" && (
+        {activePreset === "custom" && isDesktop && (
+          <Popover open={sheetOpen} onOpenChange={setSheetOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
+                <CalendarDays className="h-3.5 w-3.5" />
+                {calendarRange?.from ? calendarLabel : "Pick dates"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-auto p-0">
+              <DatePickerContent
+                calendarMonth={calendarMonth}
+                setCalendarMonth={setCalendarMonth}
+                calendarRange={calendarRange}
+                onSelect={handleCalendarSelect}
+                onClear={() => {
+                  setCalendarRange(undefined);
+                  setActivePreset("all");
+                  setSheetOpen(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
+
+        {activePreset === "custom" && !isDesktop && (
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
@@ -168,79 +294,17 @@ export default function DashboardPage() {
               <SheetHeader>
                 <SheetTitle>Select date range</SheetTitle>
               </SheetHeader>
-              <div className="space-y-3 py-4">
-                <div className="flex items-center justify-center gap-2">
-                  <Select
-                    value={String(calendarMonth.getMonth())}
-                    onValueChange={(val) =>
-                      setCalendarMonth((prev) => setMonth(prev, Number(val)))
-                    }
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <SelectItem key={i} value={String(i)}>
-                          {format(new Date(2024, i), "MMMM")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={String(calendarMonth.getFullYear())}
-                    onValueChange={(val) =>
-                      setCalendarMonth((prev) => setYear(prev, Number(val)))
-                    }
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from(
-                        { length: new Date().getFullYear() - 2020 + 1 },
-                        (_, i) => {
-                          const year = 2020 + i;
-                          return (
-                            <SelectItem key={year} value={String(year)}>
-                              {year}
-                            </SelectItem>
-                          );
-                        }
-                      )}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex justify-center">
-                  <Calendar
-                    mode="range"
-                    selected={calendarRange}
-                    onSelect={handleCalendarSelect}
-                    month={calendarMonth}
-                    onMonthChange={setCalendarMonth}
-                    numberOfMonths={1}
-                    disabled={{ after: new Date() }}
-                  />
-                </div>
-              </div>
-              {calendarRange?.from && (
-                <div className="border-t px-4 py-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full text-xs"
-                    onClick={() => {
-                      setCalendarRange(undefined);
-                      setActivePreset("all");
-                      setSheetOpen(false);
-                    }}
-                  >
-                    Clear selection
-                  </Button>
-                </div>
-              )}
+              <DatePickerContent
+                calendarMonth={calendarMonth}
+                setCalendarMonth={setCalendarMonth}
+                calendarRange={calendarRange}
+                onSelect={handleCalendarSelect}
+                onClear={() => {
+                  setCalendarRange(undefined);
+                  setActivePreset("all");
+                  setSheetOpen(false);
+                }}
+              />
             </SheetContent>
           </Sheet>
         )}
