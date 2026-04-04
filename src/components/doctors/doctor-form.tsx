@@ -1,20 +1,16 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createDoctorSchema, type CreateDoctorInput } from "@/lib/validations";
-import { useSpecializations } from "@/hooks/use-specializations";
-import { useHospitals } from "@/hooks/use-hospitals";
+import { useSpecializations, useCreateSpecialization } from "@/hooks/use-specializations";
+import { useHospitals, useCreateHospital } from "@/hooks/use-hospitals";
+import { usePaginatedItems } from "@/hooks/use-paginated-items";
+import { ComboboxCreatable } from "@/components/combobox-creatable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
 interface DoctorFormProps {
@@ -30,18 +26,49 @@ export function DoctorForm({
   isSubmitting,
   submitLabel = "Create Doctor",
 }: DoctorFormProps) {
-  const { data: specializations } = useSpecializations();
-  const { data: hospitals } = useHospitals();
+  const spec = usePaginatedItems();
+  const specQuery = useSpecializations({
+    search: spec.search || undefined,
+    page: spec.page,
+    limit: 30,
+  });
+  useEffect(() => {
+    spec.setQueryResult(specQuery.data ?? undefined, specQuery.isLoading);
+  }, [specQuery.data, specQuery.isLoading, spec.setQueryResult]);
+  const createSpec = useCreateSpecialization();
+
+  const hosp = usePaginatedItems();
+  const hospQuery = useHospitals({
+    search: hosp.search || undefined,
+    page: hosp.page,
+    limit: 30,
+  });
+  useEffect(() => {
+    hosp.setQueryResult(hospQuery.data ?? undefined, hospQuery.isLoading);
+  }, [hospQuery.data, hospQuery.isLoading, hosp.setQueryResult]);
+  const createHosp = useCreateHospital();
+
+  const [specLabel, setSpecLabel] = useState("");
+  const [hospLabel, setHospLabel] = useState("");
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<CreateDoctorInput>({
     resolver: zodResolver(createDoctorSchema),
     defaultValues,
   });
+
+  const specValue = watch("specialization") || "";
+  const hospValue = watch("hospital") || "";
+
+  const specSelectedLabel =
+    specLabel || spec.items.find((s) => s._id === specValue)?.name || "";
+  const hospSelectedLabel =
+    hospLabel || hosp.items.find((h) => h._id === hospValue)?.name || "";
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -54,22 +81,28 @@ export function DoctorForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specialization">Specialization</Label>
-        <Select
-          defaultValue={defaultValues?.specialization}
-          onValueChange={(val) => setValue("specialization", val)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select specialization" />
-          </SelectTrigger>
-          <SelectContent>
-            {specializations?.map((s) => (
-              <SelectItem key={s._id} value={s._id}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>Specialization</Label>
+        <ComboboxCreatable
+          value={specValue}
+          onChange={(val) => {
+            setValue("specialization", val);
+            const item = spec.items.find((s) => s._id === val);
+            if (item) setSpecLabel(item.name);
+          }}
+          items={spec.items}
+          isLoading={spec.isLoading}
+          hasMore={spec.hasMore}
+          onSearch={spec.onSearch}
+          onLoadMore={spec.onLoadMore}
+          onCreate={async (name) => {
+            const created = await createSpec.mutateAsync({ name });
+            setSpecLabel(created.name);
+            return created;
+          }}
+          placeholder="Select specialization"
+          searchPlaceholder="Search specializations..."
+          selectedLabel={specSelectedLabel}
+        />
         {errors.specialization && (
           <p className="text-sm text-destructive">
             {errors.specialization.message}
@@ -78,22 +111,28 @@ export function DoctorForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="hospital">Hospital</Label>
-        <Select
-          defaultValue={defaultValues?.hospital}
-          onValueChange={(val) => setValue("hospital", val)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select hospital" />
-          </SelectTrigger>
-          <SelectContent>
-            {hospitals?.map((h) => (
-              <SelectItem key={h._id} value={h._id}>
-                {h.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Label>Hospital</Label>
+        <ComboboxCreatable
+          value={hospValue}
+          onChange={(val) => {
+            setValue("hospital", val);
+            const item = hosp.items.find((h) => h._id === val);
+            if (item) setHospLabel(item.name);
+          }}
+          items={hosp.items}
+          isLoading={hosp.isLoading}
+          hasMore={hosp.hasMore}
+          onSearch={hosp.onSearch}
+          onLoadMore={hosp.onLoadMore}
+          onCreate={async (name) => {
+            const created = await createHosp.mutateAsync({ name });
+            setHospLabel(created.name);
+            return created;
+          }}
+          placeholder="Select hospital"
+          searchPlaceholder="Search hospitals..."
+          selectedLabel={hospSelectedLabel}
+        />
         {errors.hospital && (
           <p className="text-sm text-destructive">{errors.hospital.message}</p>
         )}
@@ -102,11 +141,7 @@ export function DoctorForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
-          <Input
-            id="phone"
-            placeholder="555-123-4567"
-            {...register("phone")}
-          />
+          <Input id="phone" placeholder="555-123-4567" {...register("phone")} />
           {errors.phone && (
             <p className="text-sm text-destructive">{errors.phone.message}</p>
           )}

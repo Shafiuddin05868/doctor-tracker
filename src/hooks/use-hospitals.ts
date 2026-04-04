@@ -10,11 +10,18 @@ export interface Hospital {
   phone: string;
 }
 
-export function useHospitals() {
-  return useQuery<Hospital[]>({
-    queryKey: ["hospitals"],
+interface HospitalsResponse {
+  items: Hospital[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export function useHospitals(filters: { search?: string; page?: number; limit?: number } = {}) {
+  return useQuery<HospitalsResponse>({
+    queryKey: ["hospitals", filters],
     queryFn: async () => {
-      const { data } = await api.get("/hospitals");
+      const { data } = await api.get("/hospitals", { params: filters });
       return data;
     },
   });

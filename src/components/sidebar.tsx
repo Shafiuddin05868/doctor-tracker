@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Stethoscope,
   Users,
+  Building2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/doctors", label: "Doctors", icon: Stethoscope },
   { href: "/patients", label: "Patients", icon: Users },
+  { href: "/hospitals", label: "Hospitals", icon: Building2 },
 ];
 
 export function Sidebar() {

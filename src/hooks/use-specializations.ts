@@ -7,11 +7,18 @@ export interface Specialization {
   name: string;
 }
 
-export function useSpecializations() {
-  return useQuery<Specialization[]>({
-    queryKey: ["specializations"],
+interface SpecializationsResponse {
+  items: Specialization[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export function useSpecializations(filters: { search?: string; page?: number; limit?: number } = {}) {
+  return useQuery<SpecializationsResponse>({
+    queryKey: ["specializations", filters],
     queryFn: async () => {
-      const { data } = await api.get("/specializations");
+      const { data } = await api.get("/specializations", { params: filters });
       return data;
     },
   });
@@ -23,6 +30,20 @@ export function useCreateSpecialization() {
   return useMutation({
     mutationFn: async (input: CreateSpecializationInput) => {
       const { data } = await api.post("/specializations", input);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["specializations"] });
+    },
+  });
+}
+
+export function useUpdateSpecialization() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...input }: CreateSpecializationInput & { id: string }) => {
+      const { data } = await api.put(`/specializations/${id}`, input);
       return data;
     },
     onSuccess: () => {

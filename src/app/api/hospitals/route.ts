@@ -2,9 +2,9 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import { requireAuth } from "@/lib/auth-helpers";
 import { Hospital } from "@/models/Hospital";
-import { createHospitalSchema } from "@/lib/validations";
+import { createHospitalSchema, paginationSchema } from "@/lib/validations";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await requireAuth();
   if (!session) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,9 +12,35 @@ export async function GET() {
 
   await connectDB();
 
-  const hospitals = await Hospital.find().sort({ name: 1 }).lean();
+  const { searchParams } = req.nextUrl;
+  const parsed = paginationSchema.safeParse(
+    Object.fromEntries(searchParams.entries())
+  );
 
-  return Response.json(hospitals);
+  if (!parsed.success) {
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const { page, limit, search } = parsed.data;
+
+  const filter: Record<string, unknown> = {};
+  if (search) {
+    filter.name = { $regex: search, $options: "i" };
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [items, total] = await Promise.all([
+    Hospital.find(filter).sort({ name: 1 }).skip(skip).limit(limit).lean(),
+    Hospital.countDocuments(filter),
+  ]);
+
+  return Response.json({
+    items,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  });
 }
 
 export async function POST(req: NextRequest) {

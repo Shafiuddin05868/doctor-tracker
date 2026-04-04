@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePatients, useDeletePatient, useCreatePatient } from "@/hooks/use-patients";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useDoctors } from "@/hooks/use-doctors";
+import { useConditions } from "@/hooks/use-conditions";
+import { usePaginatedItems } from "@/hooks/use-paginated-items";
+import { ComboboxSearch } from "@/components/combobox-search";
 import {
   Table,
   TableBody,
@@ -14,13 +17,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -48,10 +44,42 @@ export default function PatientsPage() {
   const [editPatient, setEditPatient] = useState<Patient | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
+  // Doctor filter with accumulated items
+  const doc = usePaginatedItems();
+  const docQuery = useDoctors({
+    search: doc.search || undefined,
+    page: doc.page,
+    limit: 30,
+  });
+  useEffect(() => {
+    if (docQuery.data) {
+      doc.setQueryResult(
+        {
+          items: docQuery.data.doctors.map((d) => ({ _id: d._id, name: d.name })),
+          page: docQuery.data.page,
+          totalPages: docQuery.data.totalPages,
+        },
+        docQuery.isLoading
+      );
+    } else {
+      doc.setQueryResult(undefined, docQuery.isLoading);
+    }
+  }, [docQuery.data, docQuery.isLoading, doc.setQueryResult]);
+
+  // Condition filter with accumulated items
+  const cond = usePaginatedItems();
+  const condQuery = useConditions({
+    search: cond.search || undefined,
+    page: cond.page,
+    limit: 30,
+  });
+  useEffect(() => {
+    cond.setQueryResult(condQuery.data ?? undefined, condQuery.isLoading);
+  }, [condQuery.data, condQuery.isLoading, cond.setQueryResult]);
+
   const debouncedSearch = useDebounce(search);
   const deletePatient = useDeletePatient();
   const createPatient = useCreatePatient();
-  const { data: doctorsData } = useDoctors({ limit: 100 });
 
   const { data, isLoading } = usePatients({
     page,
@@ -60,11 +88,6 @@ export default function PatientsPage() {
     condition: condition || undefined,
     doctor: doctorFilter || undefined,
   });
-
-  // Get unique conditions from current data for filter
-  const conditions = Array.from(
-    new Set(data?.patients.map((p) => p.condition) ?? [])
-  );
 
   function clearFilters() {
     setSearch("");
@@ -137,43 +160,45 @@ export default function PatientsPage() {
           />
         </div>
 
-        <Select
-          value={condition}
-          onValueChange={(val) => {
-            setCondition(val);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Condition" />
-          </SelectTrigger>
-          <SelectContent>
-            {conditions.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-full sm:w-48">
+          <ComboboxSearch
+            value={condition}
+            onChange={(val) => {
+              setCondition(val);
+              setPage(1);
+            }}
+            items={cond.items}
+            isLoading={cond.isLoading}
+            hasMore={cond.hasMore}
+            onSearch={cond.onSearch}
+            onLoadMore={cond.onLoadMore}
+            placeholder="Condition"
+            searchPlaceholder="Search conditions..."
+            selectedLabel={condition || ""}
+            clearable
+          />
+        </div>
 
-        <Select
-          value={doctorFilter}
-          onValueChange={(val) => {
-            setDoctorFilter(val);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Doctor" />
-          </SelectTrigger>
-          <SelectContent>
-            {doctorsData?.doctors.map((d) => (
-              <SelectItem key={d._id} value={d._id}>
-                {d.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-full sm:w-48">
+          <ComboboxSearch
+            value={doctorFilter}
+            onChange={(val) => {
+              setDoctorFilter(val);
+              setPage(1);
+            }}
+            items={doc.items}
+            isLoading={doc.isLoading}
+            hasMore={doc.hasMore}
+            onSearch={doc.onSearch}
+            onLoadMore={doc.onLoadMore}
+            placeholder="Doctor"
+            searchPlaceholder="Search doctors..."
+            selectedLabel={
+              doc.items.find((d) => d._id === doctorFilter)?.name || ""
+            }
+            clearable
+          />
+        </div>
 
         {hasFilters && (
           <Button variant="ghost" size="icon" onClick={clearFilters}>
@@ -200,28 +225,18 @@ export default function PatientsPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Age</TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      Gender
-                    </TableHead>
+                    <TableHead className="hidden sm:table-cell">Gender</TableHead>
                     <TableHead>Condition</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      Doctor
-                    </TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Phone
-                    </TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Added
-                    </TableHead>
+                    <TableHead className="hidden md:table-cell">Doctor</TableHead>
+                    <TableHead className="hidden lg:table-cell">Phone</TableHead>
+                    <TableHead className="hidden lg:table-cell">Added</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {data?.patients.map((patient) => (
                     <TableRow key={patient._id}>
-                      <TableCell className="font-medium">
-                        {patient.name}
-                      </TableCell>
+                      <TableCell className="font-medium">{patient.name}</TableCell>
                       <TableCell>{patient.age}</TableCell>
                       <TableCell className="hidden sm:table-cell capitalize">
                         {patient.gender}
