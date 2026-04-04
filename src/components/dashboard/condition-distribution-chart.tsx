@@ -18,13 +18,13 @@ const COLORS = [
   "var(--chart-1)",
   "var(--chart-3)",
   "var(--chart-5)",
+  "var(--chart-6)",
+  "var(--chart-7)",
+  "var(--chart-8)",
+  "var(--chart-9)",
+  "var(--chart-10)",
   "var(--chart-2)",
   "var(--chart-4)",
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
-  "#f97316",
-  "#10b981",
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,6 +59,7 @@ export function ConditionDistributionChart({
               innerRadius={60}
               outerRadius={110}
               paddingAngle={2}
+              stroke="none"
               label={renderLabel}
               labelLine={{ stroke: "var(--muted-foreground)", strokeWidth: 1 }}
             >

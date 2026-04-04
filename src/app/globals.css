@@ -29,6 +29,11 @@
   --chart-3: #0ea5e9;
   --chart-4: #cbd5e1;
   --chart-5: #38bdf8;
+  --chart-6: #6366f1;
+  --chart-7: #0d9488;
+  --chart-8: #d97706;
+  --chart-9: #7c3aed;
+  --chart-10: #0369a1;
   --sidebar: #0f172a;
   --sidebar-foreground: #f1f5f9;
   --sidebar-primary: #0284c7;
@@ -84,6 +89,11 @@
   --chart-3: #0ea5e9;
   --chart-4: #1e293b;
   --chart-5: #7dd3fc;
+  --chart-6: #a5b4fc;
+  --chart-7: #5eead4;
+  --chart-8: #fbbf24;
+  --chart-9: #a78bfa;
+  --chart-10: #38bdf8;
   --sidebar: #020617;
   --sidebar-foreground: #f1f5f9;
   --sidebar-primary: #38bdf8;
@@ -137,6 +147,11 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
