@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "Doctor Tracker",
   description:
     "Secure admin portal for managing doctors and patients with real-time analytics",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
