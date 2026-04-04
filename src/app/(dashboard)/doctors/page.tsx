@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useDoctors, useDeleteDoctor } from "@/hooks/use-doctors";
+import { useDoctors, useDeleteDoctor, type Doctor } from "@/hooks/use-doctors";
 import { useDebounce } from "@/hooks/use-debounce";
 import { DoctorTable } from "@/components/doctors/doctor-table";
 import { DoctorFilters } from "@/components/doctors/doctor-filters";
 import { AddDoctorDialog } from "@/components/doctors/add-doctor-dialog";
+import { EditDoctorDialog } from "@/components/doctors/edit-doctor-dialog";
 import { PaginationControls } from "@/components/pagination-controls";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ export default function DoctorsPage() {
   const [specialization, setSpecialization] = useState("");
   const [hospital, setHospital] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editDoctor, setEditDoctor] = useState<Doctor | null>(null);
 
   const debouncedSearch = useDebounce(search);
   const deleteDoctor = useDeleteDoctor();
@@ -86,6 +88,7 @@ export default function DoctorsPage() {
         <>
           <DoctorTable
             doctors={data?.doctors ?? []}
+            onEdit={setEditDoctor}
             onDelete={setDeleteId}
           />
 
@@ -103,6 +106,12 @@ export default function DoctorsPage() {
           )}
         </>
       )}
+
+      <EditDoctorDialog
+        doctor={editDoctor}
+        open={!!editDoctor}
+        onOpenChange={(open) => !open && setEditDoctor(null)}
+      />
 
       <ConfirmDialog
         open={!!deleteId}

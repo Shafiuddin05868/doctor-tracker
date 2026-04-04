@@ -26,6 +26,7 @@ import { SearchInput } from "@/components/search-input";
 import { PaginationControls } from "@/components/pagination-controls";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { PatientForm } from "@/components/patients/patient-form";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -119,8 +120,19 @@ export default function DoctorDetailPage({
 
       {/* Doctor Info Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Doctor Information</CardTitle>
+        <CardHeader className="flex flex-row items-center gap-4">
+          <Avatar className="h-16 w-16">
+            {doctor.profileImage ? (
+              <AvatarImage src={doctor.profileImage} alt={doctor.name} />
+            ) : null}
+            <AvatarFallback className="text-lg">
+              {doctor.name.split(" ").filter(Boolean).map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <CardTitle className="text-base">{doctor.name}</CardTitle>
+            <p className="text-sm text-muted-foreground">{doctor.specialization?.name}</p>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

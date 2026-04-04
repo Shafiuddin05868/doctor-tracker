@@ -5,7 +5,11 @@ import { SessionProvider } from "next-auth/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ImageKitProvider } from "imagekitio-next";
 import { useState } from "react";
+
+const urlEndpoint = process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT;
+const publicKey = process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY;
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -25,7 +29,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <ThemeProvider>
-            {children}
+            <ImageKitProvider
+              urlEndpoint={urlEndpoint}
+              publicKey={publicKey}
+            >
+              {children}
+            </ImageKitProvider>
             <Toaster richColors />
           </ThemeProvider>
         </TooltipProvider>

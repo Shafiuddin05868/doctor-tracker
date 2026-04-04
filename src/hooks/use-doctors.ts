@@ -9,6 +9,7 @@ export interface Doctor {
   hospital: { _id: string; name: string };
   phone: string;
   email: string;
+  profileImage?: string;
   patientCount?: number;
   createdAt: string;
   updatedAt: string;

@@ -28,6 +28,7 @@ export const createDoctorSchema = z.object({
   hospital: z.string().min(1, "Hospital ID is required"),
   phone: z.string().min(7, "Phone must be at least 7 characters"),
   email: z.email("Invalid email address"),
+  profileImage: z.string().optional(),
 });
 
 export const updateDoctorSchema = createDoctorSchema.partial();

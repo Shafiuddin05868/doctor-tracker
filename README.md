@@ -1,6 +1,6 @@
 # Doctor Tracker
 
-Doctor Tracker is a secure administrative web application that allows authenticated users to manage doctors and their corresponding patients. The system features a real-time analytics dashboard with data visualization, full CRUD operations for doctors and patients, advanced search/filter/pagination, and a modern responsive UI built with Next.js 16, MongoDB, and Tailwind CSS.
+Doctor Tracker is a secure administrative web application that allows authenticated users to manage doctors and their corresponding patients. The system features a real-time analytics dashboard with data visualization, full CRUD operations for doctors, patients, hospitals, and specializations, advanced search/filter/pagination with searchable comboboxes, optional doctor profile image uploads via ImageKit, and a modern responsive UI built with Next.js 16, MongoDB, and Tailwind CSS.
 
 ---
 
@@ -10,6 +10,7 @@ Doctor Tracker is a secure administrative web application that allows authentica
 
 - **Node.js** 20.9+ (or Bun 1.x)
 - **MongoDB Atlas** account (or local MongoDB instance)
+- **ImageKit** account (optional — for doctor profile image uploads)
 - **Git**
 
 ### Installation
@@ -41,6 +42,11 @@ Doctor Tracker is a secure administrative web application that allows authentica
    MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/doctor-tracker
    AUTH_SECRET=<generate with: openssl rand -base64 32>
    AUTH_URL=http://localhost:3000
+
+   # Optional — for doctor profile image upload
+   NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY=your-public-key
+   IMAGEKIT_PRIVATE_KEY=your-private-key
+   NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your-id/
    ```
 
 4. **Seed the database**
@@ -51,8 +57,9 @@ Doctor Tracker is a secure administrative web application that allows authentica
 
    This creates:
    - Admin user: `admin@doctortracker.com` / `admin123`
-   - 14 specializations, 8 hospitals
-   - 20 sample doctors, 100 sample patients
+   - 500 specializations, 5,000 hospitals
+   - 3,000 doctors, 10,000 patients
+   - Total: ~18,500 records for scalability testing
 
 5. **Start the development server**
 
@@ -78,7 +85,7 @@ Doctor Tracker is a secure administrative web application that allows authentica
 │         │                                                    │
 │  ┌──────▼──────────────────────────────────────────────┐    │
 │  │              Next.js App Router (Pages)              │    │
-│  │  Dashboard  │  Doctors  │  Patients  │  Login        │    │
+│  │  Dashboard │ Doctors │ Patients │ Hospitals │ Login   │    │
 │  └─────────────────────────┬───────────────────────────┘    │
 └─────────────────────────────┼────────────────────────────────┘
                               │ HTTP (axios)
@@ -96,15 +103,15 @@ Doctor Tracker is a secure administrative web application that allows authentica
 │  │              NextAuth.js v5 (JWT sessions)            │    │
 │  │  Credentials provider → bcrypt password verification  │    │
 │  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────┼────────────────────────────────┘
-                              │ Mongoose ODM
-┌─────────────────────────────▼────────────────────────────────┐
-│                      MongoDB Atlas                            │
-│  Collections: users, doctors, patients,                       │
-│               specializations, hospitals                      │
-│  Indexes: text search, field filters, date sorting            │
-│  Soft delete: isDeleted + deletedAt on all collections        │
-└──────────────────────────────────────────────────────────────┘
+└──────────────────┬──────────────────────┬────────────────────┘
+                   │ Mongoose ODM         │ ImageKit SDK
+┌──────────────────▼──────────┐  ┌───────▼──────────────────┐
+│        MongoDB Atlas         │  │      ImageKit CDN         │
+│  Collections: users, doctors,│  │  Doctor profile images    │
+│  patients, specializations,  │  │  On-the-fly transforms    │
+│  hospitals                   │  │  Client-side upload       │
+│  Indexes + Soft delete       │  └──────────────────────────┘
+└──────────────────────────────┘
 ```
 
 ### Data Flow
@@ -114,6 +121,8 @@ Doctor Tracker is a secure administrative web application that allows authentica
 2. **Data Fetching**: React Query hooks call axios instance → hits Next.js Route Handlers → Route Handlers validate auth + input (Zod) → Mongoose queries MongoDB → response flows back through the chain with automatic caching.
 
 3. **State Management**: React Query manages all server state (doctors, patients, stats). Zustand manages client-only state (sidebar open/close, theme preference with localStorage persistence).
+
+4. **Image Upload**: Doctor form uses ImageKit client-side SDK → uploads directly to ImageKit CDN → returns URL → stored in MongoDB as `profileImage` field.
 
 ---
 
@@ -159,6 +168,7 @@ Doctor Tracker is a secure administrative web application that allows authentica
 | Client State | Zustand | Lightweight client state (theme, sidebar) |
 | Forms | React Hook Form + Zod | Form handling with schema validation |
 | Charts | Recharts | Data visualization (bar, area, pie charts) |
+| Image Upload | ImageKit | CDN-hosted doctor profile images with client-side upload |
 | HTTP Client | Axios | Centralized API calls with base configuration |
 | Icons | Lucide React | Consistent icon set |
 
@@ -167,14 +177,18 @@ Doctor Tracker is a secure administrative web application that allows authentica
 ## Features
 
 - **Authentication**: Secure login with JWT sessions, protected routes via proxy.ts
-- **Dashboard**: Analytics cards, top doctors bar chart, monthly trends area chart, condition distribution pie chart
-- **Doctor Management**: Create, view, search, filter (specialization/hospital), paginate, delete (soft)
-- **Patient Management**: Create, edit, delete (soft), search, filter (condition/doctor), paginate
-- **Doctor Detail**: View doctor info, manage associated patients
+- **Dashboard**: Analytics cards, top doctors bar chart, monthly trends area chart, condition distribution pie chart, date range filter with presets and calendar picker
+- **Doctor Management**: Create, view, search, filter (specialization/hospital), paginate, delete (soft), optional profile image upload
+- **Patient Management**: Create, edit, delete (soft), search, filter (condition/doctor), paginate, optional email
+- **Doctor Detail**: View doctor info with profile image, manage associated patients
+- **Hospital & Specialization Management**: Combined page with tabs, full CRUD for both, searchable lists
+- **Searchable Comboboxes**: Server-side search with infinite scroll for specialization, hospital, doctor, and condition selection
+- **Inline Creation**: Create new specializations/hospitals directly from the doctor form without leaving the page
 - **Dark/Light Theme**: Toggle with system preference detection, persisted via Zustand
-- **Responsive Design**: Mobile-first with collapsible sidebar
+- **Responsive Design**: Mobile-first with collapsible sidebar, sheet-based calendar on mobile
 - **Soft Delete**: All records use isDeleted flag — no data is permanently lost
 - **Query Optimization**: MongoDB text indexes, field indexes, efficient aggregation pipelines
+- **Scalability**: Seed script generates 18,500+ records for stress testing
 
 ---
 
@@ -184,8 +198,9 @@ Doctor Tracker is a secure administrative web application that allows authentica
 
 - Dashboard (Desktop & Mobile)
 - Doctors list with search/filter
-- Doctor detail with patients
+- Doctor detail with patients and profile image
 - Patients page with edit dialog
+- Hospitals & Specializations management
 - Login page
 - Dark mode
 
@@ -198,24 +213,31 @@ src/
 ├── app/
 │   ├── (dashboard)/         # Authenticated route group
 │   │   ├── layout.tsx       # App shell (sidebar + header)
-│   │   ├── dashboard/       # Analytics dashboard
+│   │   ├── dashboard/       # Analytics dashboard with date filters
 │   │   ├── doctors/         # Doctor list + [id] detail
-│   │   └── patients/        # Patient list
+│   │   ├── patients/        # Patient list
+│   │   └── hospitals/       # Hospital & Specialization CRUD (tabs)
 │   ├── api/                 # REST API route handlers
 │   │   ├── auth/            # NextAuth endpoints
+│   │   ├── imagekit/auth/   # ImageKit upload authentication
 │   │   ├── dashboard/stats/ # Aggregated analytics
 │   │   ├── doctors/         # Doctor CRUD
 │   │   ├── patients/        # Patient CRUD
-│   │   ├── specializations/ # Lookup CRUD
-│   │   └── hospitals/       # Lookup CRUD
+│   │   ├── conditions/      # Distinct patient conditions
+│   │   ├── specializations/ # Specialization CRUD
+│   │   └── hospitals/       # Hospital CRUD
 │   └── login/               # Login page
 ├── components/
 │   ├── ui/                  # shadcn/ui primitives
 │   ├── dashboard/           # Chart components
 │   ├── doctors/             # Doctor-specific components
-│   └── patients/            # Patient-specific components
-├── hooks/                   # React Query hooks
-├── stores/                  # Zustand stores
-├── models/                  # Mongoose schemas
+│   ├── patients/            # Patient-specific components
+│   ├── hospitals/           # Hospital form
+│   ├── combobox-creatable   # Searchable select with inline create
+│   ├── combobox-search      # Searchable select (read-only)
+│   └── image-upload         # ImageKit upload component
+├── hooks/                   # React Query hooks + usePaginatedItems
+├── stores/                  # Zustand stores (sidebar, theme)
+├── models/                  # Mongoose schemas (User, Doctor, Patient, Hospital, Specialization)
 └── lib/                     # Utilities (auth, db, validation, axios)
 ```

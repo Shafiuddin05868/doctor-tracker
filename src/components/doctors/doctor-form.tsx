@@ -8,13 +8,17 @@ import { useSpecializations, useCreateSpecialization } from "@/hooks/use-special
 import { useHospitals, useCreateHospital } from "@/hooks/use-hospitals";
 import { usePaginatedItems } from "@/hooks/use-paginated-items";
 import { ComboboxCreatable } from "@/components/combobox-creatable";
+import { ImageUpload } from "@/components/image-upload";
+import { uploadImage } from "@/lib/upload-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 interface DoctorFormProps {
   defaultValues?: Partial<CreateDoctorInput>;
+  defaultLabels?: { specialization?: string; hospital?: string };
   onSubmit: (data: CreateDoctorInput) => void;
   isSubmitting?: boolean;
   submitLabel?: string;
@@ -22,6 +26,7 @@ interface DoctorFormProps {
 
 export function DoctorForm({
   defaultValues,
+  defaultLabels,
   onSubmit,
   isSubmitting,
   submitLabel = "Create Doctor",
@@ -48,8 +53,9 @@ export function DoctorForm({
   }, [hospQuery.data, hospQuery.isLoading, hosp.setQueryResult]);
   const createHosp = useCreateHospital();
 
-  const [specLabel, setSpecLabel] = useState("");
-  const [hospLabel, setHospLabel] = useState("");
+  const [specLabel, setSpecLabel] = useState(defaultLabels?.specialization || "");
+  const [hospLabel, setHospLabel] = useState(defaultLabels?.hospital || "");
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const {
     register,
@@ -71,7 +77,32 @@ export function DoctorForm({
     hospLabel || hosp.items.find((h) => h._id === hospValue)?.name || "";
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form
+      onSubmit={handleSubmit(async (data) => {
+        if (imageFile) {
+          try {
+            const url = await uploadImage(imageFile);
+            data.profileImage = url;
+          } catch {
+            toast.error("Failed to upload image. Please try again.");
+            return;
+          }
+        }
+        onSubmit(data);
+      })}
+      className="space-y-4"
+    >
+      <ImageUpload
+        value={watch("profileImage")}
+        file={imageFile}
+        onFileChange={setImageFile}
+        onClear={() => {
+          setImageFile(null);
+          setValue("profileImage", "");
+        }}
+        fallbackText={watch("name")?.slice(0, 2).toUpperCase() || "DR"}
+      />
+
       <div className="space-y-2">
         <Label htmlFor="name">Name</Label>
         <Input id="name" placeholder="Dr. John Smith" {...register("name")} />
