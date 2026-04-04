@@ -59,7 +59,7 @@ export function DoctorFilters({
         <SearchInput
           value={search}
           onChange={onSearchChange}
-          placeholder="Search doctors..."
+          placeholder="Search by name e.g. Melissa Clark"
         />
       </div>
 

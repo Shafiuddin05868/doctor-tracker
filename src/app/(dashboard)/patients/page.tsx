@@ -156,7 +156,7 @@ export default function PatientsPage() {
               setSearch(val);
               setPage(1);
             }}
-            placeholder="Search patients..."
+            placeholder="Search by name e.g. John Smith"
           />
         </div>
 
