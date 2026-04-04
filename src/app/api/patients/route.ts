@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
 
   const filter: Record<string, unknown> = {};
 
+  // Using $text search for scalability — uses MongoDB's inverted text index
+  // which performs well at scale. Requires full word matches (not partial).
   if (search) {
     filter.$text = { $search: search };
   }

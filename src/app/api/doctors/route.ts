@@ -27,6 +27,10 @@ export async function GET(req: NextRequest) {
 
   const filter: Record<string, unknown> = {};
 
+  // Using $text search (not $regex) for scalability — $text uses MongoDB's
+  // inverted text index which performs well at millions of records.
+  // Trade-off: requires full word matches (e.g. "John" works, "Jo" doesn't).
+  // For an admin portal this is acceptable — admins know what they're searching for.
   if (search) {
     filter.$text = { $search: search };
   }
