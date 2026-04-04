@@ -43,6 +43,8 @@ export default function PatientsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editPatient, setEditPatient] = useState<Patient | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [doctorLabel, setDoctorLabel] = useState("");
+  const [conditionLabel, setConditionLabel] = useState("");
 
   // Doctor filter with accumulated items
   const doc = usePaginatedItems();
@@ -93,6 +95,8 @@ export default function PatientsPage() {
     setSearch("");
     setCondition("");
     setDoctorFilter("");
+    setDoctorLabel("");
+    setConditionLabel("");
     setPage(1);
   }
 
@@ -166,6 +170,8 @@ export default function PatientsPage() {
             onChange={(val) => {
               setCondition(val);
               setPage(1);
+              const item = cond.items.find((c) => c._id === val);
+              setConditionLabel(item?.name || "");
             }}
             items={cond.items}
             isLoading={cond.isLoading}
@@ -174,7 +180,7 @@ export default function PatientsPage() {
             onLoadMore={cond.onLoadMore}
             placeholder="Condition"
             searchPlaceholder="Search conditions..."
-            selectedLabel={condition || ""}
+            selectedLabel={conditionLabel}
             clearable
           />
         </div>
@@ -185,6 +191,8 @@ export default function PatientsPage() {
             onChange={(val) => {
               setDoctorFilter(val);
               setPage(1);
+              const item = doc.items.find((d) => d._id === val);
+              setDoctorLabel(item?.name || "");
             }}
             items={doc.items}
             isLoading={doc.isLoading}
@@ -193,9 +201,7 @@ export default function PatientsPage() {
             onLoadMore={doc.onLoadMore}
             placeholder="Doctor"
             searchPlaceholder="Search doctors..."
-            selectedLabel={
-              doc.items.find((d) => d._id === doctorFilter)?.name || ""
-            }
+            selectedLabel={doctorLabel}
             clearable
           />
         </div>
