@@ -18,7 +18,7 @@ Doctor Tracker is a secure administrative web application that allows authentica
 1. **Clone the repository**
 
    ```bash
-   git clone <your-repo-url>
+   git clone git@github.com:Shafiuddin05868/doctor-tracker.git
    cd doctor-tracker
    ```
 
@@ -77,40 +77,40 @@ Doctor Tracker is a secure administrative web application that allows authentica
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Client (Browser)                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────┐  │
-│  │  React Query  │  │   Zustand    │  │  React Hook Form  │  │
-│  │ (server state)│  │(client state)│  │  + Zod validation │  │
-│  └──────┬───────┘  └──────────────┘  └───────────────────┘  │
-│         │                                                    │
+│                        Client (Browser)                     │
+│  ┌───────────────┐  ┌──────────────┐  ┌───────────────────┐ │
+│  │  React Query  │  │   Zustand    │  │  React Hook Form  │ │
+│  │ (server state)│  │(client state)│  │  + Zod validation │ │
+│  └──────┬────────┘  └──────────────┘  └───────────────────┘ │
+│         │                                                   │
 │  ┌──────▼──────────────────────────────────────────────┐    │
-│  │              Next.js App Router (Pages)              │    │
-│  │  Dashboard │ Doctors │ Patients │ Hospitals │ Login   │    │
-│  └─────────────────────────┬───────────────────────────┘    │
-└─────────────────────────────┼────────────────────────────────┘
+│  │              Next.js App Router (Pages)             │    │
+│  │  Dashboard │ Doctors │ Patients │ Hospitals │ Login │    │
+│  └──────────────────────────┬──────────────────────────┘    │
+└─────────────────────────────┼───────────────────────────────┘
                               │ HTTP (axios)
-┌─────────────────────────────┼────────────────────────────────┐
-│                     Next.js Server                            │
+┌─────────────────────────────┼───────────────────────────────┐
+│                     Next.js Server                          │
 │  ┌──────────────────────────▼──────────────────────────┐    │
-│  │              API Route Handlers (/api/*)              │    │
-│  │  Auth check → Zod validation → Mongoose query        │    │
+│  │              API Route Handlers (/api/*)            │    │
+│  │  Auth check → Zod validation → Mongoose query       │    │
 │  └──────────────────────────┬──────────────────────────┘    │
 │  ┌──────────────────────────▼──────────────────────────┐    │
-│  │                proxy.ts (auth guard)                  │    │
-│  │  Redirects unauthenticated users to /login            │    │
+│  │                proxy.ts (auth guard)                │    │
+│  │  Redirects unauthenticated users to /login          │    │
 │  └─────────────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │              NextAuth.js v5 (JWT sessions)            │    │
-│  │  Credentials provider → bcrypt password verification  │    │
-│  └─────────────────────────────────────────────────────┘    │
-└──────────────────┬──────────────────────┬────────────────────┘
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              NextAuth.js v5 (JWT sessions)           │   │
+│  │  Credentials provider → bcrypt password verification │   │
+│  └──────────────────────────────────────────────────────┘   │
+└──────────────────┬──────────────────────┬───────────────────┘
                    │ Mongoose ODM         │ ImageKit SDK
-┌──────────────────▼──────────┐  ┌───────▼──────────────────┐
+┌──────────────────▼───────────┐  ┌───────▼───────────────────┐
 │        MongoDB Atlas         │  │      ImageKit CDN         │
 │  Collections: users, doctors,│  │  Doctor profile images    │
 │  patients, specializations,  │  │  On-the-fly transforms    │
 │  hospitals                   │  │  Client-side upload       │
-│  Indexes + Soft delete       │  └──────────────────────────┘
+│  Indexes + Soft delete       │  └───────────────────────────┘
 └──────────────────────────────┘
 ```
 
@@ -128,30 +128,35 @@ Doctor Tracker is a secure administrative web application that allows authentica
 
 ## Technical Decisions
 
-### 1. Why Zustand over Redux Toolkit
+### 1. Why Zustand over Redux Toolkit and Context API
 
-**Decision**: Use Zustand for client state management instead of Redux Toolkit.
+**Decision**: Use Zustand for client state management over Redux Toolkit and Context API.
+
+I considered three options for client state: React Context API (built-in), Zustand, and Redux Toolkit.
 
 **Rationale**:
-- **Minimal client state**: This application's state is overwhelmingly server-driven (lists of doctors, patients, stats). React Query handles all of that. The only client state is sidebar toggle and theme preference — two boolean-like values.
-- **Bundle size**: Zustand is ~1KB gzipped vs Redux Toolkit's ~11KB. For two stores, Redux would add significant overhead for no practical benefit.
-- **Zero boilerplate**: A Zustand store is a single function call. No slices, reducers, action creators, or provider wrappers needed. The `persist` middleware handles localStorage in one line.
-- **React Query separation**: By keeping server state in React Query and client state in Zustand, there's a clear boundary. Redux Toolkit would blur this line (RTK Query vs regular slices), adding cognitive overhead.
+- **Context API re-render issue**: Context API was the simplest option, but it re-renders every consumer whenever any value changes. For a couple of values that's fine, but the spec specifically evaluates "avoid unnecessary re-renders" — so I wanted something more selective.
+- **Redux Toolkit is overkill here**: Redux Toolkit is powerful, but this app barely has any client state. React Query already manages all server data (doctors, patients, dashboard stats). The only client-side state is the sidebar toggle and theme preference. Writing slices, reducers, and action creators for two boolean values felt like bringing a sledgehammer to hang a picture frame.
+- **Zustand is the sweet spot**: ~1KB bundle, zero boilerplate (a store is literally one function call), and it only re-renders components that actually use the changed value. The `persist` middleware gave me localStorage persistence for the theme in a single line.
 
-**Trade-off acknowledged**: Redux DevTools and middleware ecosystem are more mature. For a larger application with complex client-side workflows, Redux Toolkit would be the better choice.
+|  Context API | Zustand | Redux Toolkit |
+|--------------|---------|---------------|
+| Bundle ~ 0KB | ~1 KB   | ~11 KB        |
+
+**Trade-off acknowledged**: If the app had complex client workflows (multi-step forms, undo/redo, optimistic updates beyond what React Query handles), I'd reach for Redux Toolkit without hesitation. But for this scale, Zustand keeps things lean.
 
 ### 2. Why Next.js Route Handlers over Express.js
 
 **Decision**: Use Next.js 16 built-in Route Handlers instead of a separate Express.js server.
 
-**Rationale**:
-- **Spec compliance**: The spec calls for "Express integrated within Next.js architecture." Next.js Route Handlers are the framework's native server-side API layer — they follow the same REST patterns (HTTP methods, request/response, status codes) without requiring a custom server.
-- **Zero configuration**: Route Handlers work out of the box with the App Router. Adding Express would require a custom `server.ts`, disabling some Next.js optimizations (automatic static optimization, streaming), and managing two runtimes.
-- **Same patterns**: Our Route Handlers use the exact same patterns as Express — `GET`/`POST`/`PUT`/`DELETE` functions, request parsing, JSON responses, middleware-like auth checks, Zod validation. The mental model is identical.
-- **Performance**: Route Handlers run on the same Node.js process as the Next.js server, avoiding the overhead of a separate Express server or reverse proxy.
-- **Modern standard**: Next.js Route Handlers use Web Standard APIs (Request/Response), which are more portable than Express's `req`/`res` API.
+The spec mentions "Express integrated within Next.js architecture." Rather than bolting a separate Express server onto Next.js, I used Next.js 16's built-in Route Handlers — which follow the exact same REST patterns.
 
-**Trade-off acknowledged**: Express has a richer middleware ecosystem (cors, rate-limiting, logging). For a microservices architecture or when Next.js is purely a frontend, Express would be the right choice.
+**Rationale**:
+- **Same patterns, no extra dependency**: Our API routes already do everything Express does — `GET`/`POST`/`PUT`/`DELETE` functions, JSON request/response, auth middleware checks, Zod input validation. The mental model is identical, just without the extra dependency and custom server setup.
+- **Avoids complexity**: Adding Express would've meant creating a `server.ts`, losing some Next.js optimizations (streaming, automatic static optimization), and managing two runtimes in one project.
+- **Natural fit**: For a full-stack Next.js app where the frontend and API live together, Route Handlers are the natural choice.
+
+**Trade-off acknowledged**: So I don't see any extra advantage of using Express.js. But if this were a microservices architecture or if the backend needed to serve multiple frontends, Express would absolutely be the right call.
 
 ---
 
