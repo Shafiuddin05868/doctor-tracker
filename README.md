@@ -199,15 +199,45 @@ The spec mentions "Express integrated within Next.js architecture." Rather than 
 
 ## Visual Evidence
 
-> Screenshots to be added after final UI review.
+### Dashboard
 
-- Dashboard (Desktop & Mobile)
-- Doctors list with search/filter
-- Doctor detail with patients and profile image
-- Patients page with edit dialog
-- Hospitals & Specializations management
-- Login page
-- Dark mode
+| Light Mode | Dark Mode |
+|---|---|
+| ![Dashboard Light](./screenshots/dashboard-light.png) | ![Dashboard Dark](./screenshots/dashboard-dark.png) |
+
+| Mobile Light | Mobile Dark |
+|---|---|
+| ![Dashboard Mobile Light](./screenshots/dashboard-mobile-light.png) | ![Dashboard Mobile Dark](./screenshots/dashboard-mobile-dark.png) |
+
+### Doctors
+
+| Light Mode | Dark Mode |
+|---|---|
+| ![Doctors Light](./screenshots/doctors-light.png) | ![Doctors Dark](./screenshots/doctors-dark.png) |
+
+| Doctor's Patients | Delete Confirmation |
+|---|---|
+| ![Doctor Patients](./screenshots/doctors-patients-light.png) | ![Delete Doctor](./screenshots/delete-doctor.png) |
+
+| Add Doctor (Mobile) | Doctors (Mobile) |
+|---|---|
+| ![Add Doctor Mobile](./screenshots/add-doctor-mobile.png) | ![Doctors Mobile](./screenshots/doctors-mobile.png) |
+
+### Patients
+
+| Light Mode | Dark Mode (Mobile) |
+|---|---|
+| ![Patients Light](./screenshots/patient-lgith.png) | ![Patients Dark Mobile](./screenshots/patient-dark-mobile.png) |
+
+### Login
+
+| Desktop | Mobile |
+|---|---|
+| ![Login Desktop](./screenshots/localhost_3000_login.png) | ![Login Mobile](<./screenshots/localhost_3000_login(iPhone 14 Pro Max).png>) |
+
+### Mobile Navigation
+
+![Mobile Nav](./screenshots/navMenu-mobile.png)
 
 ---
 
