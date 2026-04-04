@@ -27,7 +27,7 @@ Doctor Tracker is a secure administrative web application that allows authentica
    ```bash
    bun install
    # or
-   npm install
+   npm install --legacy-peer-deps
    ```
 
 3. **Configure environment variables**
