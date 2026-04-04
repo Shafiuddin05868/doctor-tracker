@@ -80,13 +80,22 @@ export function ComboboxSearch({
           </span>
           <div className="flex items-center gap-1">
             {clearable && value && (
-              <X
-                className="h-3.5 w-3.5 opacity-50 hover:opacity-100"
+              <span
+                role="button"
+                className="inline-flex cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   onChange("");
+                  setOpen(false);
                 }}
-              />
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }}
+              >
+                <X className="h-3.5 w-3.5 opacity-50 hover:opacity-100" />
+              </span>
             )}
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </div>
