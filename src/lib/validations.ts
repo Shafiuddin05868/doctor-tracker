@@ -39,7 +39,10 @@ export const createPatientSchema = z.object({
   gender: z.enum(["male", "female", "other"]),
   condition: z.string().min(2, "Condition is required"),
   phone: z.string().min(7, "Phone must be at least 7 characters"),
-  email: z.email("Invalid email address"),
+  email: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.email("Invalid email address").optional()
+  ),
   doctor: z.string().min(1, "Doctor ID is required"),
 });
 

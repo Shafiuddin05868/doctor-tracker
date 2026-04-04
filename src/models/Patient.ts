@@ -21,7 +21,7 @@ const PatientSchema = new Schema<IPatient>(
     gender: { type: String, required: true, enum: ["male", "female", "other"] },
     condition: { type: String, required: true },
     phone: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, default: "" },
     doctor: { type: Schema.Types.ObjectId, ref: "Doctor", required: true },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
